@@ -1,3 +1,5 @@
+import { EXTRA_TOPICS } from './pathologyLessons'
+
 export interface LearnCard {
   id: string
   title: string
@@ -14,7 +16,7 @@ export interface LearnTopic {
   cards: LearnCard[]
 }
 
-export const TOPICS: LearnTopic[] = [
+const CORE_TOPICS: LearnTopic[] = [
   {
     id: 'cell',
     title: '세포손상',
@@ -274,6 +276,8 @@ export const TOPICS: LearnTopic[] = [
     ],
   },
 ]
+
+export const TOPICS: LearnTopic[] = [...CORE_TOPICS, ...EXTRA_TOPICS]
 
 export const CELL_CARD_IDS = TOPICS.find((topic) => topic.id === 'cell')!.cards.map(
   (card) => `cell:${card.id}`,

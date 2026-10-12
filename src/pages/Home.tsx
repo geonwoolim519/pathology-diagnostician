@@ -1,12 +1,12 @@
-import { CASES, caseNo, difficultyLabel, isUnlocked, stars } from '../data/cases'
+import { CASES, caseNo, difficultyLabel, stars } from '../data/cases'
 import { useProgress } from '../context/Progress'
 import { gradeOf, averageScore, solvedCount } from '../lib/logic'
 import { useNavigate } from '../nav'
 
-function Ring({ value }: { value: number }) {
+function Ring({ value, total }: { value: number; total: number }) {
   const r = 28
   const c = 2 * Math.PI * r
-  const pct = value / 30
+  const pct = total === 0 ? 0 : value / total
   return (
     <svg width="78" height="78" viewBox="0 0 78 78" aria-hidden>
       <circle cx="39" cy="39" r={r} stroke="#e6eef2" strokeWidth="7" fill="none" />
@@ -23,7 +23,7 @@ function Ring({ value }: { value: number }) {
         transform="rotate(-90 39 39)"
       />
       <text x="39" y="43" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0c2340">
-        {value}/30
+        {value}/{total}
       </text>
     </svg>
   )
@@ -35,8 +35,8 @@ export function Home() {
   const solved = solvedCount(state)
   const solvedIds = new Set(Object.keys(state.best).map(Number))
   const starter =
-    CASES.find((item) => item.id <= 5 && isUnlocked(item.difficulty, solved) && !solvedIds.has(item.id)) ??
-    CASES.find((item) => isUnlocked(item.difficulty, solved) && !solvedIds.has(item.id)) ??
+    CASES.find((item) => item.id <= 5 && !solvedIds.has(item.id)) ??
+    CASES.find((item) => !solvedIds.has(item.id)) ??
     null
   const avg = averageScore(state)
 
@@ -53,17 +53,17 @@ export function Home() {
               질환의 원인을 찾아보세요.
             </p>
             <p className="mt-3 text-sm text-white/70">간호학과 2학년을 위한 병리학 진단 시뮬레이션</p>
-            <img src="/icon-512.png" alt="" className="mt-5 h-28 w-28 sm:h-32 sm:w-32" />
+            <img src={`${import.meta.env.BASE_URL}icon-512.png`} alt="" className="mt-5 h-28 w-28 sm:h-32 sm:w-32" />
             <p className="mt-4 max-w-xl text-xs leading-5 text-white/55">
               본 콘텐츠는 간호학 병리학 학습을 위한 교육용 시뮬레이션입니다. 실제 환자의 진단이나 치료를 대신하지 않습니다.
             </p>
           </div>
           <div className="rounded-[24px] bg-white p-4 text-ink">
             <div className="flex items-center gap-3">
-              <Ring value={solved} />
+              <Ring value={solved} total={CASES.length} />
               <div>
                 <p className="text-xs font-semibold tracking-wide text-muted">실습 진행</p>
-                <p className="mt-1 text-lg font-semibold">30개 케이스 중 {solved}개 해결</p>
+                <p className="mt-1 text-lg font-semibold">{CASES.length}개 케이스 중 {solved}개 해결</p>
                 <p className="text-sm text-muted">{avg === null ? '첫 케이스를 시작해 보세요' : gradeOf(avg)}</p>
               </div>
             </div>
@@ -71,16 +71,12 @@ export function Home() {
         </div>
       </section>
 
-      {solved >= 5 && solved < 10 ? (
-        <p className="rounded-2xl bg-mist px-4 py-3 text-sm font-medium text-teal">새로운 계통에 도전해보세요.</p>
+      {solved >= 5 && solved < CASES.length ? (
+        <p className="rounded-2xl bg-mist px-4 py-3 text-sm font-medium text-teal">
+          모든 케이스가 열려 있습니다. 다른 계통이나 어려운 난이도도 바로 선택할 수 있습니다.
+        </p>
       ) : null}
-      {solved >= 10 && solved < 20 ? (
-        <p className="rounded-2xl bg-mist px-4 py-3 text-sm font-medium text-teal">보통 난이도가 열렸습니다. 임상과 병리를 함께 읽어 보세요.</p>
-      ) : null}
-      {solved >= 20 && solved < 30 ? (
-        <p className="rounded-2xl bg-mist px-4 py-3 text-sm font-medium text-teal">어려운 난이도가 열렸습니다. 비슷한 질환을 구별해 보세요.</p>
-      ) : null}
-      {solved >= 30 ? (
+      {solved >= CASES.length ? (
         <p className="rounded-2xl bg-navy px-4 py-3 text-sm font-semibold text-white">병리학 기초 진단자 배지를 획득했습니다.</p>
       ) : null}
 
@@ -101,12 +97,12 @@ export function Home() {
               <span className="mt-4 inline-flex rounded-2xl bg-teal px-4 py-2.5 text-sm font-semibold text-white">실습 시작</span>
             </>
           ) : (
-            <p className="mt-2 text-lg font-semibold">열린 케이스를 모두 마쳤습니다.</p>
+            <p className="mt-2 text-lg font-semibold">모든 케이스를 마쳤습니다.</p>
           )}
         </button>
         <div className="grid gap-3 sm:grid-cols-3">
         {[
-          { label: '전체 케이스', copy: '30개의 가상 환자', go: () => nav({ name: 'cases' }) },
+          { label: '전체 케이스', copy: `${CASES.length}개의 가상 환자`, go: () => nav({ name: 'cases' }) },
           { label: '병리학 학습', copy: '세포손상부터 종양까지', go: () => nav({ name: 'learn' }) },
           { label: '나의 기록', copy: '점수, 오답노트, 배지', go: () => nav({ name: 'records' }) },
         ].map((item) => (
@@ -144,21 +140,19 @@ export function Home() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {CASES.filter((item) => item.id <= 5).map((item) => {
-            const open = isUnlocked(item.difficulty, solved)
             const finished = Boolean(state.best[item.id])
             return (
               <button
                 key={item.id}
                 type="button"
-                disabled={!open}
                 onClick={() => nav({ name: 'case', id: item.id })}
-                className="rounded-[22px] border border-line bg-white p-4 text-left disabled:opacity-60"
+                className="rounded-[22px] border border-line bg-white p-4 text-left"
               >
                 <p className="text-xs font-semibold tracking-[0.14em] text-teal">CASE {caseNo(item.id)}</p>
-                <p className="mt-2 text-sm font-semibold leading-5">{!open ? '잠긴 케이스' : finished ? item.title : item.teaser}</p>
+                <p className="mt-2 text-sm font-semibold leading-5">{finished ? item.title : item.teaser}</p>
                 <p className="mt-2 text-xs text-muted">
                   {item.systemLabel} · {stars(item.difficulty)}
-                  {finished ? ' · 완료' : ''}
+                  {finished ? ' · 완료' : ' · 미풀이'}
                 </p>
               </button>
             )

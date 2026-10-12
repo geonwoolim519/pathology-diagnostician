@@ -43,7 +43,7 @@ export function Records() {
       {tab === '요약' ? (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="총 케이스" value="30" />
+            <Stat label="총 케이스" value={String(CASES.length)} />
             <Stat label="완료" value={String(solved)} />
             <Stat label="무실수" value={String(clean)} />
             <Stat label="오답노트" value={String(wrongs)} />

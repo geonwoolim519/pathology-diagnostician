@@ -7,6 +7,7 @@ import { Cases } from './pages/Cases'
 import { CasePlay } from './pages/CasePlay'
 import { Learn } from './pages/Learn'
 import { Records } from './pages/Records'
+import { CASES } from './data/cases'
 import { solvedCount } from './lib/logic'
 
 const NAV = [
@@ -22,7 +23,7 @@ function Gate() {
     <div className="min-h-screen bg-paper px-5 py-8">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
         <div className="rounded-[32px] bg-navy px-6 py-8 text-white card-shadow">
-          <img src="/icon-512.png" alt="" className="mb-5 h-24 w-24" />
+          <img src={`${import.meta.env.BASE_URL}icon-512.png`} alt="" className="mb-5 h-24 w-24" />
           <p className="text-[11px] font-semibold tracking-[0.22em] text-teal-bright">PATHOLOGY DIAGNOSTICIAN</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">병리진단의사</h1>
           <p className="mt-4 text-sm leading-6 text-white/70">간호학과 2학년을 위한 병리학 진단 시뮬레이션</p>
@@ -86,7 +87,7 @@ function Frame() {
               ))}
             </nav>
             <div className="mt-auto rounded-2xl bg-white/10 p-3 text-xs leading-5 text-white/70">
-              {solvedCount(state)}/30 해결
+              {solvedCount(state)}/{CASES.length} 해결
               <p className="mt-2">교육용 시뮬레이션. 실제 진료를 대신하지 않습니다.</p>
             </div>
           </aside>

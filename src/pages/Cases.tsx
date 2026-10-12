@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
-import { CASES, SYSTEMS, caseNo, difficultyLabel, isUnlocked, stars, unlockNeed } from '../data/cases'
+import { CASES, SYSTEMS, caseNo, difficultyLabel, stars } from '../data/cases'
 import { useProgress } from '../context/Progress'
-import { solvedCount } from '../lib/logic'
 import { useNavigate } from '../nav'
 import type { Difficulty, SystemId } from '../types'
 
@@ -12,16 +11,33 @@ const DIFFS = [
   { id: 3, label: '어려움' },
 ] as const
 
-const STATUS = ['전체', '미완료', '완료', '오답'] as const
+const STATUS = ['전체', '미풀이', '완료', '정답', '오답 경험'] as const
+
+function statusText(finished: boolean, wrong: boolean) {
+  if (!finished && wrong) return '미풀이 · 오답 경험 있음'
+  if (!finished) return '미풀이'
+  if (wrong) return '완료 · 오답 경험 있음'
+  return '완료 · 정답'
+}
 
 export function Cases() {
   const { state } = useProgress()
   const nav = useNavigate()
-  const solved = solvedCount(state)
   const [system, setSystem] = useState<SystemId | 'all'>('all')
   const [diff, setDiff] = useState<0 | Difficulty>(0)
   const [status, setStatus] = useState<(typeof STATUS)[number]>('전체')
   const [query, setQuery] = useState('')
+
+  const stats = useMemo(() => {
+    const finished = CASES.filter((item) => state.best[item.id]).length
+    const wrong = CASES.filter((item) => state.wrongNotes[item.id]).length
+    return {
+      total: CASES.length,
+      finished,
+      fresh: CASES.length - finished,
+      wrong,
+    }
+  }, [state.best, state.wrongNotes])
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -31,16 +47,23 @@ export function Cases() {
       const finished = Boolean(state.best[item.id])
       const wrong = Boolean(state.wrongNotes[item.id])
       if (status === '완료' && !finished) return false
-      if (status === '미완료' && finished) return false
-      if (status === '오답' && !wrong) return false
+      if (status === '미풀이' && finished) return false
+      if (status === '정답' && !(finished && !wrong)) return false
+      if (status === '오답 경험' && !wrong) return false
       if (!q) return true
+      const systemNames = SYSTEMS.filter((row) => item.filters.includes(row.id as SystemId)).map((row) => row.label)
       const hay = [
         `case ${caseNo(item.id)}`,
         caseNo(item.id),
         String(item.id),
+        item.title,
         item.teaser,
+        item.topic ?? '',
         item.systemLabel,
-        finished ? item.title : '',
+        ...systemNames,
+        ...item.symptoms,
+        ...item.clues,
+        item.pathology.micro,
       ]
         .join(' ')
         .toLowerCase()
@@ -53,13 +76,27 @@ export function Cases() {
       <header className="mb-4">
         <p className="text-xs font-semibold tracking-[0.16em] text-teal">CASE LIBRARY</p>
         <h2 className="mt-1 text-2xl font-semibold">케이스</h2>
-        <p className="mt-1 text-sm text-muted">질환명은 해결한 뒤에 공개됩니다. 카드에는 증상만 보입니다.</p>
+        <p className="mt-1 text-sm text-muted">모든 케이스를 바로 선택할 수 있습니다. 해결 전에는 증상 제목이 보이고, 질환명은 정답 뒤에 공개됩니다.</p>
       </header>
+
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          ['전체', stats.total],
+          ['완료', stats.finished],
+          ['미풀이', stats.fresh],
+          ['오답 경험', stats.wrong],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-2xl bg-white px-3 py-3 card-shadow">
+            <p className="text-xs font-semibold text-muted">{label}</p>
+            <p className="mt-1 text-xl font-semibold text-navy">{value}</p>
+          </div>
+        ))}
+      </div>
 
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="케이스 번호, 증상, 계통 검색"
+        placeholder="질환명, 증상, 병리 용어, 계통 검색"
         className="mb-3 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-teal focus:ring-2"
       />
 
@@ -88,8 +125,6 @@ export function Cases() {
             }`}
           >
             {item.label}
-            {item.id === 2 && solved < 10 ? ' · 잠김' : ''}
-            {item.id === 3 && solved < 20 ? ' · 잠김' : ''}
           </button>
         ))}
         {STATUS.map((item) => (
@@ -108,35 +143,29 @@ export function Cases() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((item) => {
-          const open = isUnlocked(item.difficulty, solved)
           const finished = state.best[item.id]
-          const wrong = state.wrongNotes[item.id]
+          const wrong = Boolean(state.wrongNotes[item.id])
+          const label = statusText(Boolean(finished), wrong)
           return (
             <button
               key={item.id}
               type="button"
-              disabled={!open}
               onClick={() => nav({ name: 'case', id: item.id })}
-              className="rounded-[24px] border border-line bg-white p-4 text-left card-shadow disabled:cursor-not-allowed"
+              className="rounded-[24px] border border-line bg-white p-4 text-left card-shadow"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold tracking-[0.14em] text-teal">CASE {caseNo(item.id)}</p>
                 <p className="text-xs text-muted">{stars(item.difficulty)}</p>
               </div>
-              <p className="mt-3 text-base font-semibold leading-6">
-                {open ? (finished ? item.title : item.teaser) : `${difficultyLabel(item.difficulty)} 난이도`}
-              </p>
+              <p className="mt-3 text-base font-semibold leading-6">{finished ? item.title : item.teaser}</p>
               <p className="mt-2 text-sm text-muted">
                 {item.systemLabel} · {difficultyLabel(item.difficulty)}
               </p>
-              {!open ? (
-                <p className="mt-3 text-xs leading-5 text-warn">{unlockNeed(item.difficulty)}개 케이스를 완료하면 열립니다.</p>
-              ) : (
-                <p className="mt-3 text-xs font-semibold text-teal">
-                  {finished ? `${finished.score}점` : '미완료'}
-                  {wrong ? ' · 오답노트' : ''}
-                </p>
-              )}
+              <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted">{item.topic ?? item.clues[0]}</p>
+              <p className={`mt-3 text-xs font-semibold ${wrong ? 'text-warn' : 'text-teal'}`}>
+                {label}
+                {finished ? ` · ${finished.score}점` : ''}
+              </p>
             </button>
           )
         })}

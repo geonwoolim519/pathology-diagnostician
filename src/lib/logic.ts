@@ -123,9 +123,9 @@ export function badgeList(state: ProgressState): Badge[] {
     {
       id: 'title',
       title: '병리학 기초 진단자',
-      detail: '기초 병리 실습의 전 과정을 마쳤습니다.',
+      detail: '예순 개 케이스를 모두 해결했습니다.',
       mark: '🎓',
-      earned: solved.size >= 30,
+      earned: solved.size >= CASES.length,
     },
   ]
 }

@@ -9,6 +9,11 @@ export type SystemId =
   | 'hematology'
   | 'musculoskeletal'
   | 'immune'
+  | 'nervous'
+  | 'endocrine'
+  | 'infection'
+  | 'skin'
+  | 'metabolic'
 
 export type SlideTheme =
   | 'mucosa-acute'
@@ -49,6 +54,7 @@ export type SlideTheme =
   | 'normal-uterus'
   | 'normal-blood'
   | 'normal-vessel'
+  | 'tissue'
 
 export interface ObservationPoint {
   label: string
@@ -63,6 +69,10 @@ export interface CaseData {
   systemLabel: string
   filters: SystemId[]
   difficulty: Difficulty
+  /** 카드에 보이는 핵심 학습 주제. 없으면 첫 단서를 쓴다. */
+  topic?: string
+  /** 검증된 논문 인용 대신, 교과서·공식 자료를 확인하라는 안내. */
+  references?: string
   patient: { age: number; sex: '남성' | '여성'; line: string }
   symptoms: string[]
   history: string[]

@@ -1,9 +1,11 @@
+import { EXTRA_TERMS } from './pathologyTerms'
+
 export interface GlossaryEntry {
   term: string
   body: string
 }
 
-export const GLOSSARY: GlossaryEntry[] = [
+const CORE_TERMS: GlossaryEntry[] = [
   {
     term: '가역적 세포손상',
     body: '원인이 사라지면 세포가 다시 회복할 수 있는 손상이다. 세포부종이나 지방변화가 대표적이다.',
@@ -125,6 +127,8 @@ export const GLOSSARY: GlossaryEntry[] = [
     body: '면역체계가 자신의 조직을 외부 물질처럼 인식해 공격하는 상태이다.',
   },
 ]
+
+export const GLOSSARY: GlossaryEntry[] = [...CORE_TERMS, ...EXTRA_TERMS]
 
 const byLength = [...GLOSSARY].sort((a, b) => b.term.length - a.term.length)
 

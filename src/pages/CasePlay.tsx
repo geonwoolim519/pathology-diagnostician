@@ -1,9 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Microscope } from '../components/Slide'
 import { RichText } from '../components/RichText'
-import { caseNo, getCase, isUnlocked, unlockNeed } from '../data/cases'
+import { caseNo, getCase } from '../data/cases'
 import { useProgress } from '../context/Progress'
-import { badgeList, gradeOf, scoreOf, solvedCount } from '../lib/logic'
+import { badgeList, gradeOf, scoreOf } from '../lib/logic'
 import { useNavigate, useTerm } from '../nav'
 import type { AttemptRecord, CaseData } from '../types'
 
@@ -11,7 +11,6 @@ const STEPS = ['환자', '증상', '검사', '병리', '진단']
 
 export function CasePlay({ id }: { id: number }) {
   const item = getCase(id)
-  const { state } = useProgress()
   const nav = useNavigate()
   if (!item) {
     return (
@@ -21,21 +20,6 @@ export function CasePlay({ id }: { id: number }) {
           목록으로
         </button>
       </p>
-    )
-  }
-  const open = isUnlocked(item.difficulty, solvedCount(state))
-  if (!open) {
-    return (
-      <div className="mx-auto max-w-lg rounded-[28px] bg-white p-6 card-shadow">
-        <p className="text-xs font-semibold tracking-[0.16em] text-teal">LOCKED</p>
-        <h2 className="mt-2 text-2xl font-semibold">아직 열리지 않은 난이도입니다</h2>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          {unlockNeed(item.difficulty)}개 케이스를 해결하면 이 난이도가 열립니다. 먼저 쉬운 케이스에서 병리 단서를 읽는 순서를 익혀 보세요.
-        </p>
-        <button type="button" className="mt-5 rounded-2xl bg-navy px-4 py-3 text-sm font-semibold text-white" onClick={() => nav({ name: 'cases' })}>
-          케이스 목록
-        </button>
-      </div>
     )
   }
   return <Player key={item.id} item={item} />
@@ -394,6 +378,7 @@ function Result({
         <p className="mt-2 text-sm leading-7">
           <RichText text={item.pathophysiology} onTerm={onTerm} />
         </p>
+        {item.references ? <p className="mt-4 text-xs leading-5 text-muted">{item.references}</p> : null}
       </section>
       <section className="rounded-[28px] bg-white p-5 card-shadow">
         <h3 className="text-lg font-semibold">간호학적 연결</h3>
